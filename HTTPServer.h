@@ -17,5 +17,11 @@ private:
 	string m_strRootPath;
 	SOCKET m_sockListener;
 	SOCKADDR_IN m_stLocalAddr;
+
+	HANDLE m_hAcceptEvent;
+	HANDLE m_hAcceptThread;
+	static unsigned int __stdcall ListenThread(void* pParam);
+
+	int AcceptClient();
 };
 

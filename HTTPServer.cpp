@@ -8,6 +8,9 @@ CHTTPServer::CHTTPServer(void)
 	m_sockListener = INVALID_SOCKET;
 	m_strRootPath = "";
 	memset(&m_stLocalAddr, 0, sizeof(m_stLocalAddr));
+
+	m_hAcceptEvent = NULL;
+	m_hAcceptThread = NULL;
 }
 
 
@@ -56,6 +59,9 @@ int CHTTPServer::Start(const unsigned short usPort, const char* szRootPath, int 
 		closesocket(m_sockListener);
 		return -1;
 	}
+
+	m_hAcceptEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	m_hAcceptThread = (HANDLE)_beginthreadex(NULL, 0, ListenThread, this, 0, NULL);
 	return 0;
 }
 
@@ -63,5 +69,49 @@ int CHTTPServer::Stop()
 {
 	closesocket(m_sockListener);
 	m_sockListener = INVALID_SOCKET;
+	return 0;
+}
+
+unsigned int __stdcall CHTTPServer::ListenThread(void* pParam)
+{
+	CHTTPServer* pObj = (CHTTPServer*)pParam;
+	while(WAIT_TIMEOUT == WaitForSingleObject(pObj->m_hAcceptEvent, 0))
+	{
+		pObj->AcceptClient();
+	}
+	return 0;
+}
+
+int CHTTPServer::AcceptClient()
+{
+	fd_set read_fds;
+	struct timeval timeout;
+
+	FD_ZERO(&read_fds);
+	FD_SET(m_sockListener, &read_fds);
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 100000;
+
+	int nRet = select(0, &read_fds, NULL, NULL, &timeout);
+	if(nRet <= 0)
+	{
+		return 0;
+	}
+
+	if(FD_ISSET(m_sockListener, &read_fds))
+	{
+		int len = sizeof(SOCKADDR_IN);
+		SOCKADDR_IN remoteAddr;
+		SOCKET newSock = accept(m_sockListener, (SOCKADDR*)&remoteAddr, &len);
+		if(INVALID_SOCKET == newSock)
+		{
+			printf("accept() failed, ErrCode = %d\n", WSAGetLastError());
+			return -1;
+		}
+		else
+		{
+			printf("accept new client, addr = %s, port = %d\n", inet_ntoa(remoteAddr.sin_addr), ntohs(remoteAddr.sin_port));
+		}
+	}
 	return 0;
 }
