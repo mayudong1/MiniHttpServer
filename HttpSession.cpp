@@ -72,8 +72,9 @@ unsigned int __stdcall CHttpSession::WorkThread(void* pParam)
 		FD_ZERO(&read_fds);
 		FD_SET(sock, &read_fds);
 		int nRet = select(0, &read_fds, NULL, NULL, &timeout);
+		printf("nRet = %d\n", nRet);
 		if(nRet == 0)
-		{
+		{			
 			continue;
 		}
 		else if(nRet > 0)
@@ -104,5 +105,49 @@ unsigned int __stdcall CHttpSession::WorkThread(void* pParam)
 
 int CHttpSession::ParseBuffer(char* pBuffer, int nLen)
 {
+	printf("recv: %s\n", pBuffer);
+	Send(pBuffer, nLen);
+	return 0;
+}
+
+int CHttpSession::Send(char* pBuffer, int nLen)
+{
+	int nLeftLen = nLen;
+	char* pTmpBuffer = pBuffer;
+	while(nLeftLen > 0)
+	{
+		int nToSend = min(1316, nLeftLen);
+		fd_set write_fds;
+		struct timeval timeout;
+		FD_ZERO(&write_fds);
+		FD_SET(m_remoteSock, &write_fds);
+
+		timeout.tv_sec = 1;
+		timeout.tv_usec = 0;
+		int nRet = select(0, NULL, &write_fds, NULL, &timeout);
+		if(nRet > 0)
+		{
+			int nSent = 0;
+			if (FD_ISSET(m_remoteSock, &write_fds))
+			{
+				nSent = send(m_remoteSock, (char*)pTmpBuffer, (int)nToSend, 0);
+				if(nSent < 0)
+				{
+					return -1;
+				}
+			}	
+			nLeftLen -= nSent;
+			pTmpBuffer += nSent;
+		}
+		else if(nRet < 0)
+		{
+			return -1;
+		}
+		else
+		{
+			continue;
+		}	
+	}
+
 	return 0;
 }

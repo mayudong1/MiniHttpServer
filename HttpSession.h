@@ -21,6 +21,7 @@ private:
 	static unsigned int __stdcall WorkThread(void* pParam);
 
 	int ParseBuffer(char* pBuffer, int nLen);
+	int Send(char* pBuffer, int nLen);
 };
 
 #endif
