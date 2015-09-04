@@ -129,6 +129,6 @@ int CHttpServer::AddClient(SOCKET sock, SOCKADDR_IN remoteAddr)
 int CHttpServer::DelClient(SOCKET sock)
 {
 	CAutoLock locker(&m_csForSessionMap);
-	
+
 	return 0;
 }
