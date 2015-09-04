@@ -1,12 +1,13 @@
 #include "HttpHeader.h"
 #include "HttpServer.h"
 #include "HttpSession.h"
-#include "HttpRequestParse.h"
+
 
 #define MAX_BUF_SIZE (4096)
 
 CHttpSession::CHttpSession()
 {
+	m_pHttpParse = NULL;
 	m_strRootPath = "";
 	m_remoteSock = INVALID_SOCKET;
 	memset(&m_remoteAddr, 0, sizeof(m_remoteAddr));
@@ -23,6 +24,7 @@ CHttpSession::~CHttpSession()
 
 int CHttpSession::Start(class CHttpServer* pServer, SOCKET sock, SOCKADDR_IN remoteAddr, string strRootPath)
 {
+	m_pHttpParse = new CHttpRequestParse();
 	m_pServer = pServer;
 	m_strRootPath = strRootPath;
 	m_remoteSock = sock;
@@ -53,6 +55,12 @@ int CHttpSession::Stop()
 		CloseHandle(m_hWorkThread);
 		m_hExitEvent = NULL;
 		m_hWorkThread = NULL;
+	}
+
+	if(m_pHttpParse)
+	{
+		delete m_pHttpParse;
+		m_pHttpParse = NULL;
 	}
 
 	return 0;
@@ -89,8 +97,8 @@ unsigned int __stdcall CHttpSession::WorkThread(void* pParam)
 			int nRet = pObj->ParseBuffer(buffer, nLen);
 			if(nRet == 0)
 			{
-				//pObj->m_pServer->ExitClient(sock);
-				//break;		
+				pObj->m_pServer->ExitClient(sock);
+				break;		
 			}
 		}
 		else
@@ -99,13 +107,6 @@ unsigned int __stdcall CHttpSession::WorkThread(void* pParam)
 			break;
 		}
 	}
-	return 0;
-}
-
-int CHttpSession::ParseBuffer(char* pBuffer, int nLen)
-{
-	printf("recv: %s\n", pBuffer);
-	Send(pBuffer, nLen);
 	return 0;
 }
 
@@ -148,5 +149,70 @@ int CHttpSession::Send(char* pBuffer, int nLen)
 		}	
 	}
 
+	return 0;
+}
+
+int CHttpSession::SendHttpError(int nErrorCode)
+{
+	const char *not_found =
+		"HTTP/1.1 404 Not Found\r\n"		
+		"Content-Type: text/html\r\n"
+		"Content-Length: 40\r\n"
+		"\r\n"
+		"<HTML><BODY>File not found</BODY></HTML>\r\n";
+
+	const char *bad_request =
+		"HTTP/1.1 400 Bad Request\r\n"
+		"Content-Type: text/html\r\n"
+		"Content-Length: 39\r\n"
+		"\r\n"
+		"<h1>Bad Request (Invalid Hostname)</h1>\r\n";
+
+	const char* nul_request = 
+		"HTTP/1.1 204 OK"
+		"Content-Type: text/html"
+		"Content-Length: 0"
+		"\r\n";
+
+	switch(nErrorCode)
+	{
+	case 404:
+		Send((char*)not_found, (int)strlen(not_found));
+		break;
+	case 400:
+		Send((char*)bad_request, (int)strlen(bad_request));
+		break;
+	case 204:
+		Send((char*)nul_request, (int)strlen(nul_request));
+		break;
+	default:
+		Send((char*)not_found, (int)strlen(not_found));
+		break;
+	}
+	return 0;
+}
+
+//返回值 0:断开连接   1:保持连接
+int CHttpSession::ParseBuffer(char* pBuffer, int nLen)
+{
+	int nRet = m_pHttpParse->Input(pBuffer, m_stRequestInfo);
+	if(nRet < 0)
+	{
+		SendHttpError(400);
+	}
+	else if(nRet > 0)
+	{
+		return 1;
+	}
+	else if(nRet == 0)
+	{
+		SendHttpError(404);
+	}
+	
+	m_stRequestInfo.body = NULL;
+	m_stRequestInfo.http_headers.clear();
+	m_stRequestInfo.method = "";
+	m_stRequestInfo.url = "";
+	m_stRequestInfo.version = "";
 	return 0;
 }

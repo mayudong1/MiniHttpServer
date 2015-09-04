@@ -107,7 +107,17 @@ unsigned int __stdcall CHttpServer::ListenThread(void* pParam)
 	CHttpServer* pObj = (CHttpServer*)pParam;
 	while(WAIT_TIMEOUT == WaitForSingleObject(pObj->m_hAcceptEvent, 0))
 	{
-		pObj->AcceptClient();
+		{
+			CAutoLock locker(&pObj->m_csForExitClient);
+			while(!pObj->m_queueExitClient.empty())
+			{
+				SOCKET sock = pObj->m_queueExitClient.front();
+				pObj->m_queueExitClient.pop();
+				pObj->DelClient(sock);
+			}
+		}
+
+		pObj->AcceptClient();		
 	}
 	return 0;
 }
@@ -139,8 +149,7 @@ int CHttpServer::AcceptClient()
 			return -1;
 		}
 		else
-		{
-			printf("accept new client, addr = %s, port = %d\n", inet_ntoa(remoteAddr.sin_addr), ntohs(remoteAddr.sin_port));
+		{			
 			AddClient(newSock, remoteAddr);
 		}
 	}
@@ -158,6 +167,7 @@ int CHttpServer::AddClient(SOCKET sock, SOCKADDR_IN remoteAddr)
 		return -1;
 	}
 	m_mapSession[sock] = pHttpSession;
+	printf("accept new client, addr = %s, port = %d\n", inet_ntoa(remoteAddr.sin_addr), ntohs(remoteAddr.sin_port));
 	return 0;
 }
 
@@ -169,6 +179,7 @@ int CHttpServer::DelClient(SOCKET sock)
 	{
 		delete iter->second;
 		m_mapSession.erase(iter);
+		printf("delete client\n");
 		return 0;
 	}
 	return -1;

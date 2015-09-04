@@ -21,6 +21,21 @@ class CHttpRequestParse
 public:
 	CHttpRequestParse();
 	~CHttpRequestParse();
+
+	int Input(string strInput, RequestInfo& stRequestInfo);
+
+private:
+	int parse_http_request(string header, RequestInfo &stRequestInfo);
+	string get_method(string &header);
+	string get_url(string &header);
+	string get_http_version(string &header);
+	bool is_valid_http_method(string method);
+	http_header parse_http_headers(string &header);
+	int get_content_length(RequestInfo &stRequestInfo);
+private:
+	string m_strRequestHeader;
+	bool m_bHasbody;
+	int m_nContentLen;
 };
 
 

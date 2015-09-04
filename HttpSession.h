@@ -1,6 +1,8 @@
 #ifndef __HTTPSESSION_H_
 #define __HTTPSESSION_H_
 
+#include "HttpRequestParse.h"
+
 class CHttpSession
 {
 public:
@@ -11,6 +13,9 @@ public:
 	int Stop();
 
 private:
+	class CHttpRequestParse* m_pHttpParse;
+
+	RequestInfo m_stRequestInfo;
 	string m_strRootPath;
 	SOCKET m_remoteSock;
 	SOCKADDR_IN m_remoteAddr;
@@ -22,6 +27,7 @@ private:
 
 	int ParseBuffer(char* pBuffer, int nLen);
 	int Send(char* pBuffer, int nLen);
+	int SendHttpError(int nErrorCode);
 };
 
 #endif
