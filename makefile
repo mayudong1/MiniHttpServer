@@ -1,10 +1,12 @@
 src += main.cpp
 src += HttpServer.cpp
 src += HttpSession.cpp
+src += HttpRequestParse.cpp
 
 objs += main.o 
 objs += HttpServer.o 
 objs += HttpSession.o
+objs += HttpRequestParse.o
 
 LIBS += -lws2_32
 CFLAGS = -g -O2 -Wall

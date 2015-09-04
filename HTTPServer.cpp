@@ -14,12 +14,14 @@ CHttpServer::CHttpServer(void)
 	m_hAcceptThread = NULL;
 
 	InitializeCriticalSection(&m_csForSessionMap);
+	InitializeCriticalSection(&m_csForExitClient);
 }
 
 
 CHttpServer::~CHttpServer(void)
 {
 	WSACleanup();
+	DeleteCriticalSection(&m_csForExitClient);
 	DeleteCriticalSection(&m_csForSessionMap);
 }
 
@@ -71,8 +73,32 @@ int CHttpServer::Start(const unsigned short usPort, const char* szRootPath, int 
 
 int CHttpServer::Stop()
 {
-	closesocket(m_sockListener);
-	m_sockListener = INVALID_SOCKET;
+	if(m_hAcceptEvent)
+	{
+		SetEvent(m_hAcceptEvent);
+		if(WAIT_TIMEOUT == WaitForSingleObject(m_hAcceptThread, 3000))
+		{
+			TerminateThread(m_hAcceptThread, -1);
+		}
+		CloseHandle(m_hAcceptThread);
+		CloseHandle(m_hAcceptEvent);
+		m_hAcceptEvent = NULL;
+		m_hAcceptThread = NULL;
+	}
+
+	for(HttpSessionMap::iterator iter = m_mapSession.begin(); iter != m_mapSession.end(); iter++)
+	{
+		iter->second->Stop();
+		delete iter->second;
+	}
+	m_mapSession.clear();
+
+	if(m_sockListener == INVALID_SOCKET)
+	{
+		closesocket(m_sockListener);
+		m_sockListener = INVALID_SOCKET;	
+	}
+
 	return 0;
 }
 
@@ -115,6 +141,7 @@ int CHttpServer::AcceptClient()
 		else
 		{
 			printf("accept new client, addr = %s, port = %d\n", inet_ntoa(remoteAddr.sin_addr), ntohs(remoteAddr.sin_port));
+			AddClient(newSock, remoteAddr);
 		}
 	}
 	return 0;
@@ -123,12 +150,33 @@ int CHttpServer::AcceptClient()
 int CHttpServer::AddClient(SOCKET sock, SOCKADDR_IN remoteAddr)
 {
 	CAutoLock locker(&m_csForSessionMap);
+	CHttpSession* pHttpSession = new CHttpSession();
+	int nRet = pHttpSession->Start(this, sock, remoteAddr, m_strRootPath);
+	if(nRet != 0)
+	{
+		delete pHttpSession;
+		return -1;
+	}
+	m_mapSession[sock] = pHttpSession;
 	return 0;
 }
 
 int CHttpServer::DelClient(SOCKET sock)
 {
 	CAutoLock locker(&m_csForSessionMap);
+	HttpSessionMap::iterator iter = m_mapSession.find(sock);
+	if(iter != m_mapSession.end())
+	{
+		delete iter->second;
+		m_mapSession.erase(iter);
+		return 0;
+	}
+	return -1;
+}
 
+int CHttpServer::ExitClient(SOCKET sock)
+{
+	CAutoLock locker(&m_csForExitClient);
+	m_queueExitClient.push(sock);
 	return 0;
 }

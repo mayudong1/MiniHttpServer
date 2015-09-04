@@ -9,6 +9,7 @@ typedef map<SOCKET, class CHttpSession*> HttpSessionMap;
 
 class CHttpServer
 {
+	friend class CHttpSession;
 public:
 	CHttpServer(void);
 	~CHttpServer(void);
@@ -32,6 +33,10 @@ private:
 
 	int AddClient(SOCKET sock, SOCKADDR_IN remoteAddr);
 	int DelClient(SOCKET sock);
+
+	CRITICAL_SECTION m_csForExitClient;
+	queue<SOCKET> m_queueExitClient;
+	int ExitClient(SOCKET sock);
 };
 
 

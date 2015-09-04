@@ -6,6 +6,7 @@
 #include <process.h>
 #include <string>
 #include <map>
+#include <queue>
 
 #include "AutoLock.h"
 
