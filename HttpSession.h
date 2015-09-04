@@ -28,6 +28,8 @@ private:
 	int ParseBuffer(char* pBuffer, int nLen);
 	int Send(char* pBuffer, int nLen);
 	int SendHttpError(int nErrorCode);
+
+	int ProcessFileRequest(string strFileName, int nFileStart, int nFileStop);
 };
 
 #endif

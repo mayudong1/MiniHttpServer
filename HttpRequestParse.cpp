@@ -15,6 +15,7 @@ CHttpRequestParse::CHttpRequestParse()
 {
 	m_bHasbody = false;
 	m_nContentLen = 0;
+	init_map_file_type();
 }
 
 CHttpRequestParse::~CHttpRequestParse()
@@ -198,4 +199,22 @@ int CHttpRequestParse::get_content_length(RequestInfo &stRequestInfo)
 
 	int nContLen = atoi(szContLen.c_str());
 	return nContLen;
+}
+
+void CHttpRequestParse::init_map_file_type()
+{
+	m_mapFileType.clear();
+	m_mapFileType.insert(make_pair("jpg", "image/jpeg"));
+	m_mapFileType.insert(make_pair("xml", "text/xml"));
+}
+
+string CHttpRequestParse::GetContentType(string strFileExtName)
+{
+	string strContentType = "application/octet-stream";
+	map<string, string>::iterator iter = m_mapFileType.find(strFileExtName);
+	if(iter != m_mapFileType.end())
+	{
+		strContentType = iter->second;
+	}
+	return strContentType;
 }

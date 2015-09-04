@@ -23,6 +23,7 @@ public:
 	~CHttpRequestParse();
 
 	int Input(string strInput, RequestInfo& stRequestInfo);
+	string GetContentType(string strFileExtName);
 
 private:
 	int parse_http_request(string header, RequestInfo &stRequestInfo);
@@ -36,6 +37,9 @@ private:
 	string m_strRequestHeader;
 	bool m_bHasbody;
 	int m_nContentLen;
+
+	void init_map_file_type();
+	map<string, string> m_mapFileType;
 };
 
 

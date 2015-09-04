@@ -192,6 +192,54 @@ int CHttpSession::SendHttpError(int nErrorCode)
 	return 0;
 }
 
+int CHttpSession::ProcessFileRequest(string strFileName, int nFileStart, int nFileStop)
+{
+	strFileName = m_strRootPath + "\\" + strFileName;
+
+	FILE* pFile = fopen(strFileName.c_str(), "rb");
+	if(pFile == NULL)
+	{
+		SendHttpError(404);
+		return -1;
+	}
+
+	fseek(pFile, 0, SEEK_END);
+
+	int nFileSize = ftell(pFile);
+	int nFileStartPos = min(nFileStart, max(nFileSize, 0));
+	
+	// int nRetCode = 200;
+	// string strFileExt = "";
+	// string strContentType = "application/octet-stream";
+	// size_t nPos = strFileName.find_last_of(".");
+	// if(nPos != string::npos)
+	// {
+	// 	strFileExt = strFileName.substr(nPos+1, strFileName.length()-nPos);		
+	// }
+	// transform(strFileExt.begin(), strFileExt.end(), strFileExt.begin(), tolower);
+	// if(m_pHttpParse)
+	// {
+	// 	strContentType = m_pHttpParse->GetContentType(strFileExt);
+	// }
+
+	// char resp_head[MAX_BUF_SIZE];
+	// sprintf(resp_head,
+	// 	"HTTP/1.1 %d OK\r\n"
+	// 	"Accept-Ranges: bytes\r\n"
+	// 	"Content-Length:%I64d\r\n"
+	// 	"Content-Range: bytes %I64d-%I64d/%I64d\r\n"
+	// 	"Content-Type: %s\r\n"
+	// 	"\r\n", 
+	// 	nRetCode, 
+	// 	min(nFileSize-nFileStartPos, max(nFileSize, 0)), 
+	// 	nFileStartPos, nFileSize, nFileSize, 
+	// 	strContentType);
+	// Send(resp_head, strlen(resp_head));
+
+	fclose(pFile);
+	return 0;
+}
+
 //返回值 0:断开连接   1:保持连接
 int CHttpSession::ParseBuffer(char* pBuffer, int nLen)
 {
@@ -208,11 +256,50 @@ int CHttpSession::ParseBuffer(char* pBuffer, int nLen)
 	{
 		SendHttpError(404);
 	}
-	
+
+	if(m_stRequestInfo.method == "GET")
+	{
+		string szURLName;
+		if(m_stRequestInfo.url != "/" && m_stRequestInfo.url != "")
+		{
+			szURLName = m_stRequestInfo.url.substr(1, m_stRequestInfo.url.length());
+
+			int nFileStart = 0;
+			int nFileStop = 0;
+			http_header::iterator it_range = m_stRequestInfo.http_headers.find("Range");
+			if(it_range != m_stRequestInfo.http_headers.end())
+			{
+				string szRangeContext = it_range->second;
+				size_t nPos0 = szRangeContext.find('=');
+				size_t nPos1 = szRangeContext.find('-');
+				if(nPos1 != string::npos && nPos1 != string::npos)
+				{					
+					string szStart = szRangeContext.substr(nPos0+1, nPos1-nPos0-1);
+					string szStop = szRangeContext.substr(nPos1+1, szRangeContext.length());
+					nFileStart = _atoi64(szStart.data());
+					nFileStop = _atoi64(szStop.data());
+				}
+			}
+			ProcessFileRequest(szURLName, nFileStart, nFileStop);
+		}
+	}
+
+	bool bKeepAlive = false;
+	http_header::iterator it_connection = m_stRequestInfo.http_headers.find("Connection");
+	if(it_connection != m_stRequestInfo.http_headers.end())
+	{
+		if(it_connection->second == "keep-alive")
+		{
+			bKeepAlive = true;
+		}
+	}
+
 	m_stRequestInfo.body = NULL;
 	m_stRequestInfo.http_headers.clear();
 	m_stRequestInfo.method = "";
 	m_stRequestInfo.url = "";
 	m_stRequestInfo.version = "";
-	return 0;
+
+	return bKeepAlive ? 1 : 0;
 }
+
