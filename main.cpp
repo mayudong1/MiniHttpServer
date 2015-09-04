@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include "HttpServer.h"
 
+#pragma comment(lib, "ws2_32.lib")
+
 int main(int argc, char** argv)
 {
 	printf("this is a test\n");

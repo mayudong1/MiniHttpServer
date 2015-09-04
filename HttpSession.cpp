@@ -71,15 +71,14 @@ unsigned int __stdcall CHttpSession::WorkThread(void* pParam)
 		SOCKET sock = pObj->m_remoteSock;
 		FD_ZERO(&read_fds);
 		FD_SET(sock, &read_fds);
-		int nRet = select(0, &read_fds, NULL, NULL, &timeout);
-		printf("nRet = %d\n", nRet);
+		int nRet = select(0, &read_fds, NULL, NULL, &timeout);		
 		if(nRet == 0)
 		{			
 			continue;
 		}
 		else if(nRet > 0)
 		{
-			char buffer[MAX_BUF_SIZE];
+			char buffer[MAX_BUF_SIZE] = {0};
 			int nLen = recv(sock, buffer, MAX_BUF_SIZE, 0);
 			if(nLen <= 0)
 			{
@@ -90,8 +89,8 @@ unsigned int __stdcall CHttpSession::WorkThread(void* pParam)
 			int nRet = pObj->ParseBuffer(buffer, nLen);
 			if(nRet == 0)
 			{
-				pObj->m_pServer->ExitClient(sock);
-				break;		
+				//pObj->m_pServer->ExitClient(sock);
+				//break;		
 			}
 		}
 		else
