@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "HTTPServer.h"
+#include "HttpServer.h"
 
 int main(int argc, char** argv)
 {
@@ -15,7 +15,7 @@ int main(int argc, char** argv)
 		usPort = 8080;
 	}
 
-	CHTTPServer server;
+	CHttpServer server;
 	int nRet = server.Start(8080);
 	if(nRet == 0)
 	{

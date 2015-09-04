@@ -1,7 +1,7 @@
 #include "HTTPServer.h"
 
 
-CHTTPServer::CHTTPServer(void)
+CHttpServer::CHttpServer(void)
 {
 	WSADATA wsaData;
 	WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -14,12 +14,12 @@ CHTTPServer::CHTTPServer(void)
 }
 
 
-CHTTPServer::~CHTTPServer(void)
+CHttpServer::~CHttpServer(void)
 {
 	WSACleanup();
 }
 
-int CHTTPServer::Start(const unsigned short usPort, const char* szRootPath, int nMaxClient)
+int CHttpServer::Start(const unsigned short usPort, const char* szRootPath, int nMaxClient)
 {
 	int nRet = 0;
 
@@ -65,16 +65,16 @@ int CHTTPServer::Start(const unsigned short usPort, const char* szRootPath, int 
 	return 0;
 }
 
-int CHTTPServer::Stop()
+int CHttpServer::Stop()
 {
 	closesocket(m_sockListener);
 	m_sockListener = INVALID_SOCKET;
 	return 0;
 }
 
-unsigned int __stdcall CHTTPServer::ListenThread(void* pParam)
+unsigned int __stdcall CHttpServer::ListenThread(void* pParam)
 {
-	CHTTPServer* pObj = (CHTTPServer*)pParam;
+	CHttpServer* pObj = (CHttpServer*)pParam;
 	while(WAIT_TIMEOUT == WaitForSingleObject(pObj->m_hAcceptEvent, 0))
 	{
 		pObj->AcceptClient();
@@ -82,7 +82,7 @@ unsigned int __stdcall CHTTPServer::ListenThread(void* pParam)
 	return 0;
 }
 
-int CHTTPServer::AcceptClient()
+int CHttpServer::AcceptClient()
 {
 	fd_set read_fds;
 	struct timeval timeout;

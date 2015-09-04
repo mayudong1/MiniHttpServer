@@ -1,14 +1,15 @@
-#pragma once
+#ifndef __HTTPSERVER_H_
+#define __HTTPSERVER_H_
 
 #include "HTTPHeader.h"
 
 #define MAX_CLIENT 1000
 
-class CHTTPServer
+class CHttpServer
 {
 public:
-	CHTTPServer(void);
-	~CHTTPServer(void);
+	CHttpServer(void);
+	~CHttpServer(void);
 
 	int Start(const unsigned short usPort, const char* szRootPath = "", int nMaxClient = MAX_CLIENT);
 	int Stop();
@@ -25,3 +26,5 @@ private:
 	int AcceptClient();
 };
 
+
+#endif
