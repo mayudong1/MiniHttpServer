@@ -1,4 +1,5 @@
-#include "HTTPServer.h"
+#include "HttpServer.h"
+#include "HttpSession.h"
 
 
 CHttpServer::CHttpServer(void)
@@ -11,12 +12,15 @@ CHttpServer::CHttpServer(void)
 
 	m_hAcceptEvent = NULL;
 	m_hAcceptThread = NULL;
+
+	InitializeCriticalSection(&m_csForSessionMap);
 }
 
 
 CHttpServer::~CHttpServer(void)
 {
 	WSACleanup();
+	DeleteCriticalSection(&m_csForSessionMap);
 }
 
 int CHttpServer::Start(const unsigned short usPort, const char* szRootPath, int nMaxClient)
@@ -113,5 +117,18 @@ int CHttpServer::AcceptClient()
 			printf("accept new client, addr = %s, port = %d\n", inet_ntoa(remoteAddr.sin_addr), ntohs(remoteAddr.sin_port));
 		}
 	}
+	return 0;
+}
+
+int CHttpServer::AddClient(SOCKET sock, SOCKADDR_IN remoteAddr)
+{
+	CAutoLock locker(&m_csForSessionMap);
+	return 0;
+}
+
+int CHttpServer::DelClient(SOCKET sock)
+{
+	CAutoLock locker(&m_csForSessionMap);
+	
 	return 0;
 }

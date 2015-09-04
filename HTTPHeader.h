@@ -5,6 +5,9 @@
 #include <winsock2.h>
 #include <process.h>
 #include <string>
+#include <map>
+
+#include "AutoLock.h"
 
 using namespace std;
 

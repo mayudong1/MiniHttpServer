@@ -1,11 +1,21 @@
-Main : main.o HttpServer.o
-	g++ -o Main.exe main.o HttpServer.o -lws2_32
+objs += main.o 
+objs += HttpServer.o 
+objs += HttpSession.o
 
-main.o :
-	g++ -g -c main.cpp
+LIBS += -lws2_32
+CFLAGS = -g -O2 -Wall
 
-HttpServer.o :
-	g++ -g -c HttpServer.cpp
-	
+Main : $(objs)
+	g++ -o Main.exe $(objs) $(LIBS)
+
+main.o : main.cpp
+	g++ -c $(CFLAGS) main.cpp
+
+HttpServer.o : HttpServer.cpp
+	g++ -c $(CFLAGS) HttpServer.cpp
+
+HttpSession.o : HttpSession.cpp
+	g++ -c $(CFLAGS) HttpSession.cpp
+
 clean : 
 	rm -rf Main.exe *.o
