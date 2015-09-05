@@ -14,7 +14,7 @@ public:
 	CHttpServer(void);
 	~CHttpServer(void);
 
-	int Start(const unsigned short usPort, const char* szRootPath = "", int nMaxClient = MAX_CLIENT);
+	int Start(const unsigned short usPort, const char* szRootPath = ".", int nMaxClient = MAX_CLIENT);
 	int Stop();
 
 private:

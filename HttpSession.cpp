@@ -90,6 +90,7 @@ unsigned int __stdcall CHttpSession::WorkThread(void* pParam)
 			int nLen = recv(sock, buffer, MAX_BUF_SIZE, 0);
 			if(nLen <= 0)
 			{
+				printf("client disconnect\n");
 				pObj->m_pServer->ExitClient(sock);
 				break;
 			}
@@ -97,12 +98,14 @@ unsigned int __stdcall CHttpSession::WorkThread(void* pParam)
 			int nRet = pObj->ParseBuffer(buffer, nLen);
 			if(nRet == 0)
 			{
+				printf("disconnect client\n");
 				pObj->m_pServer->ExitClient(sock);
 				break;		
 			}
 		}
 		else
 		{
+			printf("disconnect client\n");
 			pObj->m_pServer->ExitClient(sock);
 			break;
 		}
@@ -195,47 +198,67 @@ int CHttpSession::SendHttpError(int nErrorCode)
 int CHttpSession::ProcessFileRequest(string strFileName, int nFileStart, int nFileStop)
 {
 	strFileName = m_strRootPath + "\\" + strFileName;
-
+	
 	FILE* pFile = fopen(strFileName.c_str(), "rb");
 	if(pFile == NULL)
 	{
+		printf("open file failed, filename = %s\n", strFileName.c_str());
 		SendHttpError(404);
 		return -1;
-	}
+	}	
 
 	fseek(pFile, 0, SEEK_END);
-
 	int nFileSize = ftell(pFile);
 	int nFileStartPos = min(nFileStart, max(nFileSize, 0));
+	fseek(pFile, nFileStartPos, SEEK_SET);
 	
-	// int nRetCode = 200;
-	// string strFileExt = "";
-	// string strContentType = "application/octet-stream";
-	// size_t nPos = strFileName.find_last_of(".");
-	// if(nPos != string::npos)
-	// {
-	// 	strFileExt = strFileName.substr(nPos+1, strFileName.length()-nPos);		
-	// }
-	// transform(strFileExt.begin(), strFileExt.end(), strFileExt.begin(), tolower);
-	// if(m_pHttpParse)
-	// {
-	// 	strContentType = m_pHttpParse->GetContentType(strFileExt);
-	// }
+	int nRetCode = 200;
+	string strFileExt = "";
+	string strContentType = "application/octet-stream";
+	size_t nPos = strFileName.find_last_of(".");
+	if(nPos != string::npos)
+	{
+		strFileExt = strFileName.substr(nPos+1, strFileName.length()-nPos);		
+	}
+	string strdest;
+	strdest.resize(strFileExt.size());
+	transform(strFileExt.begin(), strFileExt.end(), strdest.begin(), ::tolower);
+	if(m_pHttpParse)
+	{
+		strContentType = m_pHttpParse->GetContentType(strFileExt);
+	}
 
-	// char resp_head[MAX_BUF_SIZE];
-	// sprintf(resp_head,
-	// 	"HTTP/1.1 %d OK\r\n"
-	// 	"Accept-Ranges: bytes\r\n"
-	// 	"Content-Length:%I64d\r\n"
-	// 	"Content-Range: bytes %I64d-%I64d/%I64d\r\n"
-	// 	"Content-Type: %s\r\n"
-	// 	"\r\n", 
-	// 	nRetCode, 
-	// 	min(nFileSize-nFileStartPos, max(nFileSize, 0)), 
-	// 	nFileStartPos, nFileSize, nFileSize, 
-	// 	strContentType);
-	// Send(resp_head, strlen(resp_head));
+	char resp_head[MAX_BUF_SIZE];
+	sprintf(resp_head,
+		"HTTP/1.1 %d OK\r\n"
+		"Accept-Ranges: bytes\r\n"
+		"Content-Length:%d\r\n"
+		"Content-Range: bytes %d-%d/%d\r\n"
+		"Content-Type: %s\r\n"		
+		"\r\n", 
+		nRetCode, 
+		min(nFileSize-nFileStartPos, max(nFileSize, 0)), 
+		nFileStartPos, nFileSize-1, nFileSize,
+		strContentType.c_str()
+		);
+	Send(resp_head, strlen(resp_head));
+	printf(resp_head);
+	
+	char buffer[4096];
+	int readed = 0;
+	while(true)
+	{
+		readed = (int)fread(buffer, 1, sizeof(buffer), pFile);
+		if(readed <= 0)
+		{
+			break;
+		}
 
+		if(Send(buffer, readed) != 0)
+		{
+			break;
+		}
+	}
 	fclose(pFile);
 	return 0;
 }
@@ -243,18 +266,25 @@ int CHttpSession::ProcessFileRequest(string strFileName, int nFileStart, int nFi
 //返回值 0:断开连接   1:保持连接
 int CHttpSession::ParseBuffer(char* pBuffer, int nLen)
 {
+	printf(pBuffer);
+
+	if(m_pHttpParse == NULL)
+	{
+		SendHttpError(400);
+		return 0;
+	}
+
+	//nRet=0正常结束 <0有错误 >0http头未结束
 	int nRet = m_pHttpParse->Input(pBuffer, m_stRequestInfo);
 	if(nRet < 0)
 	{
 		SendHttpError(400);
+		m_pHttpParse->Reset();
+		return 0;
 	}
 	else if(nRet > 0)
 	{
 		return 1;
-	}
-	else if(nRet == 0)
-	{
-		SendHttpError(404);
 	}
 
 	if(m_stRequestInfo.method == "GET")
@@ -292,8 +322,9 @@ int CHttpSession::ParseBuffer(char* pBuffer, int nLen)
 		{
 			bKeepAlive = true;
 		}
-	}
+	}	
 
+	m_pHttpParse->Reset();
 	m_stRequestInfo.body = NULL;
 	m_stRequestInfo.http_headers.clear();
 	m_stRequestInfo.method = "";

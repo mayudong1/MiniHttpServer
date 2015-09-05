@@ -23,6 +23,14 @@ CHttpRequestParse::~CHttpRequestParse()
 
 }
 
+int CHttpRequestParse::Reset()
+{
+	m_strRequestHeader = "";
+	m_bHasbody = false;
+	m_nContentLen = 0;
+	return 0;
+}
+
 //返回值 -1：有错误 
 //		  0: 正常解析结束
 //		  1: http头还不完整
@@ -206,6 +214,8 @@ void CHttpRequestParse::init_map_file_type()
 	m_mapFileType.clear();
 	m_mapFileType.insert(make_pair("jpg", "image/jpeg"));
 	m_mapFileType.insert(make_pair("xml", "text/xml"));
+	m_mapFileType.insert(make_pair("cpp", "text/html"));
+	m_mapFileType.insert(make_pair("txt", "text/html"));
 }
 
 string CHttpRequestParse::GetContentType(string strFileExtName)

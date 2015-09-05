@@ -22,6 +22,7 @@ public:
 	CHttpRequestParse();
 	~CHttpRequestParse();
 
+	int Reset();
 	int Input(string strInput, RequestInfo& stRequestInfo);
 	string GetContentType(string strFileExtName);
 
