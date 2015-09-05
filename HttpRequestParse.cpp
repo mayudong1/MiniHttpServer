@@ -43,6 +43,7 @@ int CHttpRequestParse::Input(string strInput, RequestInfo& stRequestInfo)
 		int nRet = parse_http_request(m_strRequestHeader, stRequestInfo);
 		if(nRet != 0)
 		{
+			Reset();
 			return -1;
 		}
 		int nContLen = get_content_length(stRequestInfo);
@@ -53,9 +54,11 @@ int CHttpRequestParse::Input(string strInput, RequestInfo& stRequestInfo)
 		}
 		else
 		{
+			Reset();
 			return 0;
 		}
 	}
+	Reset();
 	return 0;
 }
 

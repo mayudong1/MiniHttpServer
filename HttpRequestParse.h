@@ -22,11 +22,10 @@ public:
 	CHttpRequestParse();
 	~CHttpRequestParse();
 
-	int Reset();
 	int Input(string strInput, RequestInfo& stRequestInfo);
 	string GetContentType(string strFileExtName);
-
 private:
+	int Reset();
 	int parse_http_request(string header, RequestInfo &stRequestInfo);
 	string get_method(string &header);
 	string get_url(string &header);

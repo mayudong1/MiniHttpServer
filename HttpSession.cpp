@@ -278,8 +278,7 @@ int CHttpSession::ParseBuffer(char* pBuffer, int nLen)
 	int nRet = m_pHttpParse->Input(pBuffer, m_stRequestInfo);
 	if(nRet < 0)
 	{
-		SendHttpError(400);
-		m_pHttpParse->Reset();
+		SendHttpError(400);		
 		return 0;
 	}
 	else if(nRet > 0)
@@ -323,8 +322,7 @@ int CHttpSession::ParseBuffer(char* pBuffer, int nLen)
 			bKeepAlive = true;
 		}
 	}	
-
-	m_pHttpParse->Reset();
+	
 	m_stRequestInfo.body = NULL;
 	m_stRequestInfo.http_headers.clear();
 	m_stRequestInfo.method = "";
