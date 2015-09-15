@@ -9,11 +9,7 @@ typedef struct tagRequestInfo
 	string url;
 	string version;
 	http_header http_headers;
-	char* body;
-	tagRequestInfo()
-	{
-		body = NULL;
-	}
+	string body;
 }RequestInfo;
 
 class CHttpRequestParse

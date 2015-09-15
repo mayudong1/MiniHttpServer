@@ -195,6 +195,24 @@ int CHttpSession::SendHttpError(int nErrorCode)
 	return 0;
 }
 
+int CHttpSession::SendHttpString(string strData)
+{
+	int nRetCode = 200;
+	int nContLen = strData.length();
+
+	char resp_head[MAX_BUF_SIZE];
+	sprintf(resp_head,
+		"HTTP/1.1 %d OK\r\n"
+		"Accept-Ranges: bytes\r\n"
+		"Content-Length:%u\r\n"		
+		"Content-Type: text/plain\r\n"
+		"\r\n", nRetCode, nContLen);
+
+	Send(resp_head, strlen(resp_head));
+	Send((char*)strData.c_str(), strData.length());
+	return 0;
+}
+
 int CHttpSession::ProcessFileRequest(string strFileName, int nFileStart, int nFileStop)
 {
 	strFileName = m_strRootPath + "\\" + strFileName;
@@ -312,6 +330,10 @@ int CHttpSession::ParseBuffer(char* pBuffer, int nLen)
 			ProcessFileRequest(szURLName, nFileStart, nFileStop);
 		}
 	}
+	else if(m_stRequestInfo.method == "POST")
+	{		
+		SendHttpString(m_stRequestInfo.body);
+	}
 
 	bool bKeepAlive = false;
 	http_header::iterator it_connection = m_stRequestInfo.http_headers.find("Connection");
@@ -323,7 +345,7 @@ int CHttpSession::ParseBuffer(char* pBuffer, int nLen)
 		}
 	}	
 	
-	m_stRequestInfo.body = NULL;
+	m_stRequestInfo.body = "";
 	m_stRequestInfo.http_headers.clear();
 	m_stRequestInfo.method = "";
 	m_stRequestInfo.url = "";

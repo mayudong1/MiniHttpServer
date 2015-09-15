@@ -50,13 +50,19 @@ int CHttpRequestParse::Input(string strInput, RequestInfo& stRequestInfo)
 		if(nContLen > 0)
 		{
 			m_bHasbody = true;
-			m_nContentLen = nContLen;
+			m_nContentLen = nContLen;		
 		}
 		else
 		{
 			Reset();
 			return 0;
 		}
+	}
+	if(m_bHasbody && m_strRequestHeader.length() == nPos+m_nContentLen+4)
+	{		
+		stRequestInfo.body = m_strRequestHeader.substr(nPos+4, m_nContentLen);		
+		Reset();
+		return 0;
 	}
 	Reset();
 	return 0;
@@ -217,8 +223,8 @@ void CHttpRequestParse::init_map_file_type()
 	m_mapFileType.clear();
 	m_mapFileType.insert(make_pair("jpg", "image/jpeg"));
 	m_mapFileType.insert(make_pair("xml", "text/xml"));
-	m_mapFileType.insert(make_pair("cpp", "text/html"));
-	m_mapFileType.insert(make_pair("txt", "text/html"));
+	m_mapFileType.insert(make_pair("cpp", "text/plain"));
+	m_mapFileType.insert(make_pair("txt", "text/plain"));
 }
 
 string CHttpRequestParse::GetContentType(string strFileExtName)
