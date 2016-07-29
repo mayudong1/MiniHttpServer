@@ -4,25 +4,25 @@
 class CAutoLock
 {
 public:
-	CAutoLock(CRITICAL_SECTION *pCriticalSection)
-		:m_pCriticalSection(pCriticalSection)
+	CAutoLock(pthread_mutex_t *pMutex)
+		:m_pMutex(pMutex)
 	{
-		if(m_pCriticalSection!=NULL)
+		if(m_pMutex!=NULL)
 		{
-			EnterCriticalSection(m_pCriticalSection);
+			pthread_mutex_lock(m_pMutex);
 		}
 	}
 	~CAutoLock()
 	{
-		if(m_pCriticalSection!=NULL)
+		if(m_pMutex!=NULL)
 		{
-			LeaveCriticalSection(m_pCriticalSection);
-			m_pCriticalSection = NULL;
+			pthread_mutex_unlock(m_pMutex);
+			m_pMutex = NULL;
 		}
 	}
 
 private:
-	CRITICAL_SECTION *m_pCriticalSection;
+	pthread_mutex_t *m_pMutex;
 };
 
 #endif

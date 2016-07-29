@@ -8,7 +8,7 @@ objs += HttpServer.o
 objs += HttpSession.o
 objs += HttpRequestParse.o
 
-LIBS += -lws2_32
+#LIBS += -lws2_32
 CFLAGS = -g -O2 -Wall
 
 Main : $(objs)

@@ -22,19 +22,19 @@ private:
 	SOCKET m_sockListener;
 	SOCKADDR_IN m_stLocalAddr;
 
-	CRITICAL_SECTION m_csForSessionMap;
+	pthread_mutex_t m_csForSessionMap;
 	HttpSessionMap m_mapSession;
 
-	HANDLE m_hAcceptEvent;
-	HANDLE m_hAcceptThread;
-	static unsigned int __stdcall ListenThread(void* pParam);
+	volatile bool m_bExit;
+	pthread_t m_hAcceptThread;
+	static void* ListenThread(void* pParam);
 
 	int AcceptClient();
 
 	int AddClient(SOCKET sock, SOCKADDR_IN remoteAddr);
 	int DelClient(SOCKET sock);
 
-	CRITICAL_SECTION m_csForExitClient;
+	pthread_mutex_t m_csForExitClient;
 	queue<SOCKET> m_queueExitClient;
 	int ExitClient(SOCKET sock);
 };

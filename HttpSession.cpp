@@ -8,13 +8,11 @@
 CHttpSession::CHttpSession()
 {
 	m_pHttpParse = NULL;
-	m_strRootPath = "";
+	m_strRootPath = ".";
 	m_remoteSock = INVALID_SOCKET;
 	memset(&m_remoteAddr, 0, sizeof(m_remoteAddr));
 	m_pServer = NULL;
-
-	m_hExitEvent = NULL;
-	m_hWorkThread = NULL;
+	m_bExit = false;
 }
 
 CHttpSession::~CHttpSession()
@@ -30,8 +28,7 @@ int CHttpSession::Start(class CHttpServer* pServer, SOCKET sock, SOCKADDR_IN rem
 	m_remoteSock = sock;
 	m_remoteAddr = remoteAddr;
 
-	m_hExitEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-	m_hWorkThread = (HANDLE)_beginthreadex(NULL, 0, WorkThread, this, 0, NULL);
+	pthread_create(&m_hWorkThread, NULL, WorkThread, this);
 
 	return 0;
 }
@@ -40,21 +37,8 @@ int CHttpSession::Stop()
 {
 	if(m_remoteSock != INVALID_SOCKET)
 	{
-		closesocket(m_remoteSock);
+		close(m_remoteSock);
 		m_remoteSock = INVALID_SOCKET;
-	}
-
-	if(m_hExitEvent)
-	{
-		SetEvent(m_hExitEvent);
-		if(WAIT_TIMEOUT == WaitForSingleObject(m_hWorkThread, 3000))
-		{
-			TerminateThread(m_hWorkThread, -1);
-		}
-		CloseHandle(m_hExitEvent);
-		CloseHandle(m_hWorkThread);
-		m_hExitEvent = NULL;
-		m_hWorkThread = NULL;
 	}
 
 	if(m_pHttpParse)
@@ -66,10 +50,10 @@ int CHttpSession::Stop()
 	return 0;
 }
 
-unsigned int __stdcall CHttpSession::WorkThread(void* pParam)
+void* CHttpSession::WorkThread(void* pParam)
 {
 	CHttpSession* pObj = (CHttpSession*)pParam;
-	while(WAIT_TIMEOUT == WaitForSingleObject(pObj->m_hExitEvent, 0))
+	while(!pObj->m_bExit)
 	{
 		fd_set read_fds;
 		struct timeval timeout;
@@ -79,7 +63,8 @@ unsigned int __stdcall CHttpSession::WorkThread(void* pParam)
 		SOCKET sock = pObj->m_remoteSock;
 		FD_ZERO(&read_fds);
 		FD_SET(sock, &read_fds);
-		int nRet = select(0, &read_fds, NULL, NULL, &timeout);		
+		int maxfd = sock + 1;
+		int nRet = select(maxfd, &read_fds, NULL, NULL, &timeout);		
 		if(nRet == 0)
 		{			
 			continue;
@@ -110,7 +95,7 @@ unsigned int __stdcall CHttpSession::WorkThread(void* pParam)
 			break;
 		}
 	}
-	return 0;
+	return NULL;
 }
 
 int CHttpSession::Send(char* pBuffer, int nLen)
@@ -127,7 +112,8 @@ int CHttpSession::Send(char* pBuffer, int nLen)
 
 		timeout.tv_sec = 1;
 		timeout.tv_usec = 0;
-		int nRet = select(0, NULL, &write_fds, NULL, &timeout);
+		int maxfd = m_remoteSock+1;
+		int nRet = select(maxfd, NULL, &write_fds, NULL, &timeout);
 		if(nRet > 0)
 		{
 			int nSent = 0;
@@ -215,7 +201,7 @@ int CHttpSession::SendHttpString(string strData)
 
 int CHttpSession::ProcessFileRequest(string strFileName, int nFileStart, int nFileStop)
 {
-	strFileName = m_strRootPath + "\\" + strFileName;
+	strFileName = m_strRootPath + "/" + strFileName;
 	
 	FILE* pFile = fopen(strFileName.c_str(), "rb");
 	if(pFile == NULL)
@@ -323,8 +309,8 @@ int CHttpSession::ParseBuffer(char* pBuffer, int nLen)
 				{					
 					string szStart = szRangeContext.substr(nPos0+1, nPos1-nPos0-1);
 					string szStop = szRangeContext.substr(nPos1+1, szRangeContext.length());
-					nFileStart = _atoi64(szStart.data());
-					nFileStop = _atoi64(szStop.data());
+					nFileStart = atoi(szStart.data());
+					nFileStop = atoi(szStop.data());
 				}
 			}
 			ProcessFileRequest(szURLName, nFileStart, nFileStop);

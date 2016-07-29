@@ -168,7 +168,7 @@ http_header CHttpRequestParse::parse_http_headers(string &header)
 	string tmp_header = header;
 	http_header http_headers;
 
-	while(TRUE)
+	while(1)
 	{
 		if(tmp_header.length() <= 0)
 		{
@@ -207,7 +207,7 @@ int CHttpRequestParse::get_content_length(RequestInfo &stRequestInfo)
 	for(http_header::iterator it=stRequestInfo.http_headers.begin(); it!=stRequestInfo.http_headers.end(); it++)
 	{
 		//if(it->first == "Content-Length")
-		if(stricmp(it->first.c_str(), "Content-Length") == 0)
+		if(strcmp(it->first.c_str(), "Content-Length") == 0)
 		{
 			szContLen = it->second;
 			break;
