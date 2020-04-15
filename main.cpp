@@ -16,7 +16,7 @@ int main(int argc, char** argv)
 	}
 
 	CHttpServer server;
-	int nRet = server.Start(8080);
+	int nRet = server.Start(usPort);
 	if(nRet == 0)
 	{
 		printf("Start server success on port : %d.\n", usPort);

@@ -1,6 +1,6 @@
 #include "HttpHeader.h"
 #include "HttpRequestParse.h"
-
+#include <string.h>
 
 static void trim(string& str)
 {

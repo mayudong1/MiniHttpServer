@@ -1,6 +1,8 @@
 #include "HttpHeader.h"
 #include "HttpServer.h"
 #include "HttpSession.h"
+#include <stdlib.h>
+#include <memory.h>
 
 
 #define MAX_BUF_SIZE (4096)

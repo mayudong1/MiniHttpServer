@@ -1,7 +1,7 @@
 #ifndef __HTTPSERVER_H_
 #define __HTTPSERVER_H_
 
-#include "HTTPHeader.h"
+#include "HttpHeader.h"
 
 #define MAX_CLIENT 1000
 

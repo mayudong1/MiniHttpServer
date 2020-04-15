@@ -1,5 +1,7 @@
 #include "HttpServer.h"
 #include "HttpSession.h"
+#include <stdlib.h>
+#include <memory.h>
 
 
 CHttpServer::CHttpServer(void)
