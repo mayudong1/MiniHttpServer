@@ -16,7 +16,7 @@ int main(int argc, char** argv)
 	}
 
 	CHttpServer server;
-	int nRet = server.Start(usPort);
+	int nRet = server.Start(usPort, "/Users/mayudong/Movies");
 	if(nRet == 0)
 	{
 		printf("Start server success on port : %d.\n", usPort);
@@ -26,7 +26,14 @@ int main(int argc, char** argv)
 		printf("Start server failed.\n");
 		return -1;
 	}
-	getchar();
+	while(1)
+	{
+		char c = getchar();	
+		if(c == 'q'){
+			break;
+		}
+	}
+	
 	server.Stop();
 	return 0;
 }

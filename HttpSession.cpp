@@ -37,12 +37,14 @@ int CHttpSession::Start(class CHttpServer* pServer, SOCKET sock, SOCKADDR_IN rem
 
 int CHttpSession::Stop()
 {
+	m_bExit = true;
 	if(m_remoteSock != INVALID_SOCKET)
 	{
 		close(m_remoteSock);
 		m_remoteSock = INVALID_SOCKET;
 	}
 
+	pthread_join(m_hWorkThread);
 	if(m_pHttpParse)
 	{
 		delete m_pHttpParse;
@@ -252,14 +254,13 @@ int CHttpSession::ProcessFileRequest(string strFileName, int nFileStart, int nFi
 	
 	char buffer[4096];
 	int readed = 0;
-	while(true)
+	while(true && !m_bExit)
 	{
 		readed = (int)fread(buffer, 1, sizeof(buffer), pFile);
 		if(readed <= 0)
 		{
 			break;
 		}
-
 		if(Send(buffer, readed) != 0)
 		{
 			break;

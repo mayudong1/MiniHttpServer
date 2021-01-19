@@ -2,6 +2,7 @@
 #include "HttpSession.h"
 #include <stdlib.h>
 #include <memory.h>
+#include <signal.h>
 
 
 CHttpServer::CHttpServer(void)
@@ -24,11 +25,21 @@ CHttpServer::~CHttpServer(void)
 	pthread_mutex_destroy(&m_csForExitClient);
 }
 
+void handle_pipe(int sig)
+{
+}
+
 int CHttpServer::Start(const unsigned short usPort, const char* szRootPath, int nMaxClient)
 {
 	int nRet = 0;
 
 	m_strRootPath = szRootPath;
+
+	struct sigaction action;
+    action.sa_handler = handle_pipe;
+    sigemptyset(&action.sa_mask);
+    action.sa_flags = 0;
+    sigaction(SIGPIPE, &action, NULL);
 
 	m_sockListener = socket(AF_INET, SOCK_STREAM, 0);
 	if(INVALID_SOCKET == m_sockListener)
