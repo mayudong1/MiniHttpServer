@@ -16,6 +16,8 @@ public:
 
 	int Start(const unsigned short usPort, const char* szRootPath = ".", int nMaxClient = MAX_CLIENT);
 	int Stop();
+	int Pause();
+	int Resume();
 
 private:
 	string m_strRootPath;
@@ -26,6 +28,7 @@ private:
 	HttpSessionMap m_mapSession;
 
 	volatile bool m_bExit;
+	volatile bool m_bPaused;
 	pthread_t m_hAcceptThread;
 	static void* ListenThread(void* pParam);
 

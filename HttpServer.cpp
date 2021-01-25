@@ -12,6 +12,7 @@ CHttpServer::CHttpServer(void)
 	memset(&m_stLocalAddr, 0, sizeof(m_stLocalAddr));
 
 	m_bExit = false;
+	m_bPaused = false;
 
 	pthread_mutex_init(&m_csForSessionMap, NULL);
 	pthread_mutex_init(&m_csForExitClient, NULL);
@@ -91,6 +92,24 @@ int CHttpServer::Stop()
 	return 0;
 }
 
+int CHttpServer::Pause(){
+	for(HttpSessionMap::iterator iter = m_mapSession.begin(); iter != m_mapSession.end(); iter++)
+	{
+		iter->second->Pause();
+	}
+	m_bPaused = true;
+	return 0;
+}
+
+int CHttpServer::Resume(){
+	for(HttpSessionMap::iterator iter = m_mapSession.begin(); iter != m_mapSession.end(); iter++)
+	{
+		iter->second->Resume();
+	}
+	m_bPaused = false;
+	return 0;
+}
+
 void* CHttpServer::ListenThread(void* pParam)
 {
 	CHttpServer* pObj = (CHttpServer*)pParam;	
@@ -158,6 +177,9 @@ int CHttpServer::AddClient(SOCKET sock, SOCKADDR_IN remoteAddr)
 	}
 	m_mapSession[sock] = pHttpSession;
 	printf("accept new client, addr = %s, port = %d\n", inet_ntoa(remoteAddr.sin_addr), ntohs(remoteAddr.sin_port));
+	if(m_bPaused){
+		pHttpSession->Pause();
+	}
 	return 0;
 }
 

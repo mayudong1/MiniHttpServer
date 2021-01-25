@@ -123,7 +123,12 @@ string CHttpRequestParse::get_url(string &header)
 	size_t pos_method = tmp_header.find_first_of(' ');
 	if(pos_method != string::npos)
 	{
-		url = tmp_header.substr(0, pos_method);
+		size_t question_mark_pos = tmp_header.find_first_of('?');
+		if(question_mark_pos != string::npos){
+			url = tmp_header.substr(0, question_mark_pos);
+		}else{
+			url = tmp_header.substr(0, pos_method);	
+		}
 		header = tmp_header.substr(pos_method+1, tmp_header.length());	
 	}
 

@@ -15,6 +15,7 @@ CHttpSession::CHttpSession()
 	memset(&m_remoteAddr, 0, sizeof(m_remoteAddr));
 	m_pServer = NULL;
 	m_bExit = false;
+	m_bPaused = false;
 }
 
 CHttpSession::~CHttpSession()
@@ -38,19 +39,30 @@ int CHttpSession::Start(class CHttpServer* pServer, SOCKET sock, SOCKADDR_IN rem
 int CHttpSession::Stop()
 {
 	m_bExit = true;
+	m_bPaused = false;
 	if(m_remoteSock != INVALID_SOCKET)
 	{
 		close(m_remoteSock);
 		m_remoteSock = INVALID_SOCKET;
 	}
 
-	pthread_join(m_hWorkThread);
+	pthread_join(m_hWorkThread, NULL);
 	if(m_pHttpParse)
 	{
 		delete m_pHttpParse;
 		m_pHttpParse = NULL;
 	}
 
+	return 0;
+}
+
+int CHttpSession::Pause(){
+	m_bPaused = true;
+	return 0;
+}
+
+int CHttpSession::Resume(){
+	m_bPaused = false;
 	return 0;
 }
 
@@ -250,12 +262,16 @@ int CHttpSession::ProcessFileRequest(string strFileName, int nFileStart, int nFi
 		strContentType.c_str()
 		);
 	Send(resp_head, strlen(resp_head));
-	printf(resp_head);
+	printf("%s", resp_head);
 	
 	char buffer[4096];
 	int readed = 0;
 	while(true && !m_bExit)
 	{
+		if(m_bPaused){
+			usleep(200);
+			continue;
+		}
 		readed = (int)fread(buffer, 1, sizeof(buffer), pFile);
 		if(readed <= 0)
 		{
@@ -273,7 +289,7 @@ int CHttpSession::ProcessFileRequest(string strFileName, int nFileStart, int nFi
 //返回值 0:断开连接   1:保持连接
 int CHttpSession::ParseBuffer(char* pBuffer, int nLen)
 {
-	printf(pBuffer);
+	printf("%s", pBuffer);
 
 	if(m_pHttpParse == NULL)
 	{

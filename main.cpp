@@ -31,6 +31,10 @@ int main(int argc, char** argv)
 		char c = getchar();	
 		if(c == 'q'){
 			break;
+		}else if(c == 'p'){
+			server.Pause();
+		}else if(c == 'r'){
+			server.Resume();
 		}
 	}
 	

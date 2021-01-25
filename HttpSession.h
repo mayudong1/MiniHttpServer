@@ -11,6 +11,8 @@ public:
 
 	int Start(class CHttpServer* pServer, SOCKET sock, SOCKADDR_IN remoteAddr, string strRootPath);
 	int Stop();
+	int Pause();
+	int Resume();
 
 private:
 	class CHttpRequestParse* m_pHttpParse;
@@ -21,6 +23,7 @@ private:
 	SOCKADDR_IN m_remoteAddr;
 	class CHttpServer* m_pServer;
 
+	volatile bool m_bPaused;
 	volatile bool m_bExit;
 	pthread_t m_hWorkThread;
 	static void* WorkThread(void* pParam);
