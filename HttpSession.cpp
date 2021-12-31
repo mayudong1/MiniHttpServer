@@ -217,6 +217,10 @@ int CHttpSession::SendHttpString(string strData)
 
 int CHttpSession::ProcessFileRequest(string strFileName, int nFileStart, int nFileStop)
 {
+	if(nFileStop != 0 && nFileStop < nFileStart){
+		SendHttpError(400);
+		return -1;
+	}
 	strFileName = m_strRootPath + "/" + strFileName;
 	
 	FILE* pFile = fopen(strFileName.c_str(), "rb");
@@ -229,8 +233,15 @@ int CHttpSession::ProcessFileRequest(string strFileName, int nFileStart, int nFi
 
 	fseek(pFile, 0, SEEK_END);
 	int nFileSize = ftell(pFile);
-	int nFileStartPos = min(nFileStart, max(nFileSize, 0));
-	fseek(pFile, nFileStartPos, SEEK_SET);
+	if(nFileStart > nFileSize){
+		fclose(pFile);
+		SendHttpError(400);
+		return -1;
+	}
+	fseek(pFile, nFileStart, SEEK_SET);
+	if(nFileStop == 0){
+		nFileStop = nFileSize-1;
+	}
 	
 	int nRetCode = 200;
 	string strFileExt = "";
@@ -257,8 +268,8 @@ int CHttpSession::ProcessFileRequest(string strFileName, int nFileStart, int nFi
 		"Content-Type: %s\r\n"		
 		"\r\n", 
 		nRetCode, 
-		min(nFileSize-nFileStartPos, max(nFileSize, 0)), 
-		nFileStartPos, nFileSize-1, nFileSize,
+		nFileStop - nFileStart + 1,
+		nFileStart, nFileStop, nFileSize,
 		strContentType.c_str()
 		);
 	Send(resp_head, strlen(resp_head));
