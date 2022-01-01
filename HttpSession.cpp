@@ -258,7 +258,7 @@ int CHttpSession::ProcessFileRequest(string strFileName, int nFileStart, int nFi
 	{
 		strContentType = m_pHttpParse->GetContentType(strFileExt);
 	}
-
+	int nContentSize = nFileStop - nFileStart + 1;
 	char resp_head[MAX_BUF_SIZE];
 	sprintf(resp_head,
 		"HTTP/1.1 %d OK\r\n"
@@ -268,7 +268,7 @@ int CHttpSession::ProcessFileRequest(string strFileName, int nFileStart, int nFi
 		"Content-Type: %s\r\n"		
 		"\r\n", 
 		nRetCode, 
-		nFileStop - nFileStart + 1,
+		nContentSize,
 		nFileStart, nFileStop, nFileSize,
 		strContentType.c_str()
 		);
@@ -277,13 +277,15 @@ int CHttpSession::ProcessFileRequest(string strFileName, int nFileStart, int nFi
 	
 	char buffer[4096];
 	int readed = 0;
+	int remainSize = nContentSize;
 	while(true && !m_bExit)
 	{
 		if(m_bPaused){
 			usleep(200);
 			continue;
 		}
-		readed = (int)fread(buffer, 1, sizeof(buffer), pFile);
+		int sendSize = min(4096, remainSize);
+		readed = (int)fread(buffer, 1, sendSize, pFile);
 		if(readed <= 0)
 		{
 			break;
@@ -292,6 +294,7 @@ int CHttpSession::ProcessFileRequest(string strFileName, int nFileStart, int nFi
 		{
 			break;
 		}
+		remainSize -= readed;
 	}
 	fclose(pFile);
 	return 0;

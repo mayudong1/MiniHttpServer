@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include "HttpServer.h"
+#include <string.h>
 
 int main(int argc, char** argv)
 {
-	printf("this is a test\n");
-
+	char wwwroot[256];
+	strcpy(wwwroot, "/Users/mayudong/Movies");
 	unsigned short usPort = 0;
 	if(argc >= 2)
 	{
@@ -14,9 +15,13 @@ int main(int argc, char** argv)
 	{
 		usPort = 8080;
 	}
+	if(argc >= 3)
+	{
+		strcpy(wwwroot, argv[2]);
+	}
 
 	CHttpServer server;
-	int nRet = server.Start(usPort, "/Users/mayudong/Movies");
+	int nRet = server.Start(usPort, wwwroot);
 	if(nRet == 0)
 	{
 		printf("Start server success on port : %d.\n", usPort);
